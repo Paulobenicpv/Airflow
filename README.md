@@ -19,22 +19,15 @@ Projeto **Airflow (produção-ready)** com:
 ## 🧱 Arquitetura (Mermaid)
 ```mermaid
 flowchart LR
-  subgraph Ingestion
-    A[PTAX API] -->|JSON| B(b3_ptax_ingest)
-    C[SAP (sim)] -->|CSV| D(sap_orders_ingest)
-  end
-
-  B --> E[/Raw/]
+  A[PTAX API] -->|JSON| B[b3_ptax_ingest]
+  C[SAP sim] -->|CSV| D[sap_orders_ingest]
+  B --> E[Raw Layer]
   D --> E
-
-  subgraph Transform
-    E --> F[ptax_transform_curated]
-    F --> G[(Parquet Curated)]
-    G --> H{{Quality + GE}}
-    H --> I(dbt run/test)
-  end
-
-  I --> J[/Serving CSV/]
+  E --> F[ptax_transform_curated]
+  F --> G[(Parquet Curated)]
+  G --> H{Quality Checks + GE}
+  H --> I[dbt run/test]
+  I --> J[Serving CSV]
   J --> K[Power BI Refresh + Poll]
 ```
 
