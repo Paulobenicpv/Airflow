@@ -1,0 +1,5 @@
+{
+  "env": "prod",
+  "raw_bucket": "s3://my-raw-zone",
+  "curated_bucket": "s3://my-curated-zone"
+}

@@ -1,0 +1,17 @@
+[
+  {
+    "name": "default_pool",
+    "slots": 128,
+    "description": "Default pool"
+  },
+  {
+    "name": "ingestion_pool",
+    "slots": 16,
+    "description": "I/O heavy ingestion"
+  },
+  {
+    "name": "transform_pool",
+    "slots": 32,
+    "description": "Transform jobs"
+  }
+]

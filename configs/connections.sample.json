@@ -1,0 +1,14 @@
+[
+  {
+    "conn_id": "aws_default",
+    "conn_type": "aws",
+    "login": "AKIA...",
+    "password": "****",
+    "extra": "{\"region_name\":\"us-east-1\"}"
+  },
+  {
+    "conn_id": "duckdb_default",
+    "conn_type": "sqlite",
+    "host": ":memory:"
+  }
+]

@@ -1,0 +1,1 @@
+# Espaço para fixtures de testes
