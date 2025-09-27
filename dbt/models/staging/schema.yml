@@ -1,0 +1,12 @@
+version: 2
+models:
+  - name: stg_ptax
+    columns:
+      - name: data
+        tests: [not_null]
+      - name: media_compra
+        tests: [not_null]
+      - name: media_venda
+        tests: [not_null]
+      - name: observacoes
+        tests: [not_null]

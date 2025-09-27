@@ -1,37 +1,36 @@
+
 name: ci
 
 on:
   push:
+    
     branches: [ main ]
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   quality:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [ "3.11" ]
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.11"
           cache: "pip"
-
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt pytest black isort ruff
-
       - name: Lint & tests
         run: |
           black --check .
           isort --check-only .
           ruff .
           pytest -q
-
       - name: DagBag check
         run: |
           python - <<'PY'
@@ -39,3 +38,83 @@ jobs:
           db = DagBag(dag_folder="dags", include_examples=False)
           assert len(db.import_errors) == 0, db.import_errors
           PY
+
+  image:
+    needs: quality
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Build image
+        run: |
+          IMAGE=ghcr.io/${{ github.repository }}:latest
+          docker build -t "$IMAGE" -f ops/docker/Dockerfile .
+          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+      - name: Push image
+        run: docker push "$IMAGE"
+
+
+  # Manual trigger to publish a version tag
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Semver tag (e.g., v1.0.0)'
+        required: true
+jobs:
+  publish-tag:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create and push tag
+        run: |
+          git tag ${{ github.event.inputs.tag }}
+          git push origin ${{ github.event.inputs.tag }}
+
+
+  image-tagged:
+    needs: quality
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Build & Push tagged image
+        run: |
+          TAG=${GITHUB_REF_NAME}
+          IMAGE_BASE=ghcr.io/${{ github.repository }}
+          docker build -t "$IMAGE_BASE:latest" -t "$IMAGE_BASE:$TAG" -f ops/docker/Dockerfile .
+          docker push "$IMAGE_BASE:latest"
+          docker push "$IMAGE_BASE:$TAG"
+
+
+  image:
+    needs: quality
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'release'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Derive tags
+        id: vars
+        run: |
+          echo "sha_short=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Build image
+        run: |
+          IMAGE_BASE=ghcr.io/${{ github.repository }}
+          docker build -t "$IMAGE_BASE:latest" -t "$IMAGE_BASE:${{ steps.vars.outputs.sha_short }}" -f ops/docker/Dockerfile .
+      - name: Push image
+        run: |
+          IMAGE_BASE=ghcr.io/${{ github.repository }}
+          docker push "$IMAGE_BASE:latest"
+          docker push "$IMAGE_BASE:${{ steps.vars.outputs.sha_short }}"
+      - name: Tag on release
+        if: github.event_name == 'release'
+        run: |
+          IMAGE_BASE=ghcr.io/${{ github.repository }}
+          docker tag "$IMAGE_BASE:latest" "$IMAGE_BASE:${{ github.event.release.tag_name }}"
+          docker push "$IMAGE_BASE:${{ github.event.release.tag_name }}"

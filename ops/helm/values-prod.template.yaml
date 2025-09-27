@@ -1,13 +1,13 @@
 # ops/helm/values-prod.template.yaml
 # Render this with ops/tools/render_values.py or manually replace tokens.
 
-namespace: "airflow-prod"
+namespace: "{{NAMESPACE}}"
 
 executor: KubernetesExecutor
 
 image:
-  repository: "ghcr.io/Paulobenicpv/Airflow"      # e.g., ghcr.io/Paulobenicpv/Airflow
-  tag: "latest"              # e.g., latest or a git SHA/tag
+  repository: "{{IMAGE_REPO}}"      # e.g., ghcr.io/Paulobenicpv/Airflow
+  tag: "{{IMAGE_TAG}}"              # e.g., latest or a git SHA/tag
   pullPolicy: IfNotPresent
 
 env:
@@ -23,7 +23,7 @@ extraEnv:
   - name: AIRFLOW__SECRETS__BACKEND
     value: airflow.providers.microsoft.azure.secrets.key_vault.AzureKeyVaultBackend
   - name: AIRFLOW__SECRETS__BACKEND_KWARGS
-    value: '{"connections_path":"airflow-connections","variables_path":"airflow-variables","vault_url":"https://SEU_VAULT.vault.azure.net/"}'
+    value: '{"connections_path":"airflow-connections","variables_path":"airflow-variables","vault_url":"{{VAULT_URL}}"}'
 
 # Mount Azure credentials from a Kubernetes Secret named 'airflow-azure'
 extraEnvFrom:

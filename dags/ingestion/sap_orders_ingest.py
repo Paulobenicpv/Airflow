@@ -1,8 +1,11 @@
+from datetime import timedelta
 from datetime import datetime
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 from dags._commons.factories import default_args
 from dags._commons.consts import TAGS_INGESTION
+
+from dags._commons import alerts
 
 with DAG(
     dag_id="sap_orders_ingest",

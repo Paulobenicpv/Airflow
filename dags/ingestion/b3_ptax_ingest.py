@@ -1,3 +1,4 @@
+from datetime import timedelta
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
@@ -10,6 +11,8 @@ def fetch_ptax(execution_date: str, **_):
     p = pathlib.Path(f"/opt/airflow/include/tmp/{execution_date}")
     p.mkdir(parents=True, exist_ok=True)
     (p / "ptax.json").write_text('{"ok": true, "date": "%s"}' % execution_date)
+
+from dags._commons import alerts
 
 with DAG(
     dag_id="b3_ptax_ingest",

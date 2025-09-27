@@ -7,3 +7,6 @@ apache-airflow-providers-docker
 apache-airflow-providers-slack
 duckdb
 dbt-core
+dbt-duckdb
+
+# optional: great_expectations

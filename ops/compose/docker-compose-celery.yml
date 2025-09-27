@@ -1,0 +1,85 @@
+services:
+  redis:
+    image: redis:7
+    ports: ["6379:6379"]
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  airflow-init:
+    image: apache/airflow:2.9.3
+    env_file:
+      - ../../.env
+    depends_on:
+      - postgres
+    entrypoint: /bin/bash
+    command: -c "airflow db migrate && airflow users create --role Admin --username admin --password admin --firstname Admin --lastname User --email admin@example.com || true"
+    volumes:
+      - ../../dags:/opt/airflow/dags
+      - ../../plugins:/opt/airflow/plugins
+      - ../../include:/opt/airflow/include
+      - ../../requirements.txt:/opt/airflow/requirements.txt
+
+  scheduler:
+    image: apache/airflow:2.9.3
+    env_file:
+      - ../../.env
+    environment:
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+      AIRFLOW__CELERY__BROKER_URL: redis://redis:6379/0
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres:5432/airflow
+    depends_on:
+      - airflow-init
+      - redis
+      - postgres
+    volumes:
+      - ../../dags:/opt/airflow/dags
+      - ../../plugins:/opt/airflow/plugins
+      - ../../include:/opt/airflow/include
+      - ../../requirements.txt:/opt/airflow/requirements.txt
+    command: scheduler
+
+  webserver:
+    image: apache/airflow:2.9.3
+    env_file:
+      - ../../.env
+    environment:
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+      AIRFLOW__CELERY__BROKER_URL: redis://redis:6379/0
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres:5432/airflow
+    depends_on:
+      - scheduler
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../../dags:/opt/airflow/dags
+      - ../../plugins:/opt/airflow/plugins
+      - ../../include:/opt/airflow/include
+      - ../../requirements.txt:/opt/airflow/requirements.txt
+    command: webserver
+
+  worker:
+    image: apache/airflow:2.9.3
+    env_file:
+      - ../../.env
+    environment:
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+      AIRFLOW__CELERY__BROKER_URL: redis://redis:6379/0
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres:5432/airflow
+    depends_on:
+      - scheduler
+    volumes:
+      - ../../dags:/opt/airflow/dags
+      - ../../plugins:/opt/airflow/plugins
+      - ../../include:/opt/airflow/include
+      - ../../requirements.txt:/opt/airflow/requirements.txt
+    command: celery worker
+
+volumes:
+  pg_data:

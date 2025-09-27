@@ -1,0 +1,14 @@
+name: airflow_dbt_project
+version: "1.0.0"
+config-version: 2
+
+profile: default
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+snapshot-paths: ["snapshots"]
+test-paths: ["tests"]
+
+models:
+  airflow_dbt_project:
+    +materialized: table

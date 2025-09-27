@@ -1,0 +1,24 @@
+name: trivy
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build image (no push)
+        run: docker build -t local/image:scan -f ops/docker/Dockerfile .
+      - name: Run Trivy scan
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: local/image:scan
+          format: 'table'
+          vuln-type: 'os,library'
+          ignore-unfixed: true
