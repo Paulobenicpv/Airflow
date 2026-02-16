@@ -16,7 +16,7 @@ jobs:
       - name: Build image (no push)
         run: docker build -t local/image:scan -f ops/docker/Dockerfile .
       - name: Run Trivy scan
-        uses: aquasecurity/trivy-action@0.24.0
+        uses: aquasecurity/trivy-action@0.34.0
         with:
           image-ref: local/image:scan
           format: 'table'
